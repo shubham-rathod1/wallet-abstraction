@@ -7,21 +7,30 @@
 const hre = require("hardhat");
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
 
-  const lockedAmount = hre.ethers.utils.parseEther("0.001");
+const [owner, acc1] = await ethers.getSigners();
+console.log("account 1", owner.address);
+console.log("account 2", acc1.address);
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+const Wallet = await hre.ethers.getContractFactory("Wallet");
+const wallet = await Wallet.deploy(acc1.address, "shubham");
 
-  await lock.deployed();
+await wallet.deployed();
+console.log("wallet contract deployed to -", wallet.address);
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+const Counter  = await hre.ethers.getContractFactory("Counter");
+const counter = await Counter.deploy();
+
+await counter.deployed();
+console.log("counter contract deployed to -", counter.address);
+
+// read the value and update via account contract;
+
+console.log("the counter value 1", await counter.counter());
+const unsignedTxt = await counter.populateTransaction.increment();
+await wallet.connect(owner).call(counter.address, unsignedTxt.data);
+console.log("inceremented the counter");
+console.log('log new counter value', await counter.counter());
 }
 
 // We recommend this pattern to be able to use async/await everywhere
